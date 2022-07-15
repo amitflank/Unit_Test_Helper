@@ -2,8 +2,9 @@ from code import interact
 from functools import total_ordering
 import pytest
 from typing import Tuple, Union, List
-from case_generator import Param_Wrapper, prune_sets, set_generator, wraps_param_vars, wrap_obj
+from case_generator import Param_Wrapper, prune_sets, set_generator, wraps_param_vars, wrap_obj, generate_params
 from random import randint
+from math import prod
 import numpy as np
 
 def create_non_uniform_2D_list(dims: tuple) -> List[List[int]]:
@@ -25,13 +26,7 @@ def get_val_idx(D1_idx: int, dims: tuple) -> int:
     
     return idx
 
-def prod(vals) -> Union[int, float]:
-    """Takes a iterable of float or ints and returns product of all elements in iterator"""
-    prod  = 1
-    for val in vals:
-        prod *= val
-    
-    return prod
+
 
 @staticmethod
 @pytest.mark.parametrize("obj_to_wrap, exp_restrictions", [
@@ -105,3 +100,40 @@ def test_prune_sets(restrictions: List[Tuple[int, int, int]], param_vars_dims: T
     sets = set_generator(D2_list)
     pruned_sets = prune_sets(D2_list, sets)
     assert len(pruned_sets) == exp_sets, "Expected {0} sets but found {1} sets".format(exp_sets, len(pruned_sets))
+
+
+
+gen_param_data = [["hi", "bye", "dude"],
+["no", "way", "jose"],
+["good", "time", "guy"]]
+
+
+
+@pytest.mark.parametrize("restrictions, param_setup, param_idx, exp_sets", [
+    ([(0, 0, 1)], gen_param_data,(1,1), 21), #include 1 val 
+    ([(0, 0, 0)], gen_param_data,(1,1), 24), #exclude 1 val
+    ([(0, 0, 1), (2, 1, 0)], gen_param_data,(1,1), 20), #include 1 val, exclude 1 val
+    ([(0, 0, 1), (2, 1, 1)], gen_param_data,(1,1), 19), #include multiple vals
+    ([(0, 0, 0), (2, 1, 0)], gen_param_data,(1,1), 22) #exclude multiple vals 
+])
+def test_generate_params(restrictions: List[Tuple[int, int, int]], param_setup, param_idx: Tuple[int, int], exp_sets: int):
+    D2_list = wraps_param_vars(param_setup) #create param_wrappers for each element in lists
+    x_idx, y_idx = param_idx
+    wrapped_obj = D2_list[x_idx][y_idx]
+    wrapped_obj.restrictions = restrictions
+    new_param_list = generate_params(D2_list)
+    
+    assert len(new_param_list) == exp_sets, "Expected {0} sets but found {1} sets".format(exp_sets, len(new_param_list))
+
+    for restriction in restrictions:
+        for param in new_param_list:
+            if  wrapped_obj.value in param:
+                required_val = D2_list[x_idx][y_idx].value
+
+                if restriction[2] == 1:
+                    assert required_val in param, "Expected to find {0} as it was required".format(required_val)
+                else:
+                    assert required_val not in param, "Found illegally restricted value {0} in param list".format(required_val)
+
+def test_eval_fxn_w_args():
+    pass
