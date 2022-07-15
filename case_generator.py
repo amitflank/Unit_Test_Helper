@@ -1,7 +1,7 @@
 import itertools
 import random
 from random import randint
-from typing import Any, List, Tuple, Dict, Union, Callable
+from typing import Any, List, Tuple, Dict, Union, Callable, Iterable
 import numpy as np
 
 class Param_Wrapper():
@@ -57,7 +57,7 @@ class Param_Wrapper():
             elif restriction[2] == 0:
                 exclude_set.add(str_set_val)
             else:
-                raise ValueError("passed bad restriction type value {0}. restriction types can only be 0: exclusive or 1: inclusive".format(restriction[2]))
+                raise ValueError("passed bad restriction value {0}. restrictions must be 0: exclusive or 1: inclusive".format(restriction[2]))
         
         valid_exclude_set = len(exclude_set & p_set) == 0 #make sure we have no elements from exclude set
         return include_set.issubset(p_set) and valid_exclude_set
@@ -129,111 +129,37 @@ def set_generator(param_vars: List[List[Param_Wrapper]]):
     var_sets = [set(val)  for val in itertools.product(*var_sets)] #get iterable product of all our combinations
     return var_sets
 
+def generate_params(param_vars: List[List[Param_Wrapper]]) -> List[tuple]:
+    sets = set_generator(param_vars)
+    pruned_sets = prune_sets(param_vars, sets)
+    args_list = [None] * len(pruned_sets)
 
-a= ["hi", "bye"]
-b = ["no", "way", "jose"]
-c = ["good", "time"]
-d = [a,b,c]
-e = wraps_param_vars(d)
-test = set_generator(e)
-pruned =  prune_sets(e, test)
-print(test)
-
-def new_get_vars(vars: Union[Any, Tuple[Callable, dict]]) -> list:
-    """Allows passing of fxns w/args in unit tests.
-
-    If passing a fxn must be in a tuple with following format:
-    Tuple(fxn_name, dict{arg1_name: arg1_val, ..., argN_name: argN_val}"""
-
-    called_vars = []
-    for _, var in enumerate(vars):
-        if type(var) is tuple:
-            assert callable(var[0]), "first element of tuple passed to arg generator must be a fxn"
-
-            if len(var[1]) == 0:            
-                called_vars.append(var[0]()) #no args so we can just eval
-            else:
-                called_vars.append(var[0](**var[1])) #pass arguments in dict to our fxn
-        else:
-            called_vars.append(var)
-    return called_vars
-
-def combination_w_fixed_elements(vals: List[List[Any]], fixed_elm: List[Any]):
-    """creates list of tuples representing all possible combinations between non_fixed elements in vals"""
-    #make sure at least one fixed elm is in every idx of vals
-    for elm in fixed_elm:
-        for val in vals:
-            assert fixed_elm in val, "asked to fix element {0}, but did not find it in list {1}".format(elm, vals)
-
-    combo_vals = list(itertools.product(*vals)) #get all val list combinations
-
-    #remove any combinations that does not contain EVERY fixed element.
-    for combo in combo_vals:
-        
-        for elm in fixed_elm:
-            if elm not in combo:
-                combo_vals.remove(combo)
-                break #we don't need to keep looking once we found 1 violation in current combo
-
-    return combo_vals
-        
-
-def _get_vars(vars: List[Any]) -> list:
-    """Helper method for tuple_truth_table_generator"""
-    #If any variable in vars is a function we need to evaluate it first.
-    called_vars = []
-    for idx, var in enumerate(vars):
-        if callable(var):
-            called_vars.append(var())
-        else:
-            called_vars.append(var)
-    return called_vars
-
-def new_tuple_truth_table_generator(num_bool: int, fixed_elm: List[Tuple[int, bool]]) -> list:
-    num_tuples = pow(2, num_bool)
-    tuple_lists = [None for _ in range(num_tuples)]
-
-    for i in range(num_tuples):
-        valid_add = True
-
-        # convert decimal to binary list
-        res = np.array([int(j) for j in list('{0:0b}'.format(i))])
-        pad_len = num_bool - len(res)
-        pad_res = np.pad(res, (pad_len, 0), 'constant', constant_values=0) # left pad list with zeros to desired length
-        pad_res = pad_res.astype(bool)  # Convert to boolean list
-
-        #make sure we don't have illegal vals as defined by fixed_elm
-        for f_elm in fixed_elm:
-            if pad_res[f_elm[0]] != f_elm[1]:
-                valid_add = False
-                break
-
-        if valid_add:
-
-            tuple_lists[i] = tuple(pad_res)
+    for idx, set_vals in enumerate(pruned_sets):
+        args = ()
+        for val in set_vals:
+            args += (Param_Wrapper.convert_1d_idx_to_2d(val, param_vars),)
+        args_list[idx] = args
+    return args_list
     
-    return tuple_lists
 
-def tuple_truth_table_generator(vars: List[Any], num_bool: int) -> list:
-    """
-    So the goal of this function is to basically help with making parameterization less clunky.
-    It basically creates a True/False table for vars with num_bools elements.
-    Args:
-        vars: arbitrary list of anything
-        bool: number of booleans desired
-    """
-    num_tuples = pow(2, num_bool)
-    tuple_lists = [None for _ in range(num_tuples)]
+class Fxn_Wrapper():
 
-    for i in range(num_tuples):
-        # convert decimal to binary list
-        res = np.array([int(j) for j in list('{0:0b}'.format(i))])
-        pad_len = num_bool - len(res)
-        # left pad list with zeros to desired length
-        pad_res = np.pad(res, (pad_len, 0), 'constant', constant_values=0)
-        pad_res = pad_res.astype(bool)  # Convert to boolean list
-        new_vars = _get_vars(vars) + list(pad_res)
-        tuple_lists[i] = tuple(new_vars)
+    def __init__(self, fxn: callable, args: List[Dict[str, Param_Wrapper]]):
+        assert callable(fxn), "must pass a callable to Fxn_wrapper"
+        self.fxn = fxn 
+        self.args = args
     
-    return tuple_lists
+    def generate_args(self):
+        keys = []
+        for arg in self.args:
+            arg.keys()
+            
+            for key, val in enumerate(arg):
+                keys.append(key)
 
+
+    def eval_fxn_w_args(self, args: List[Iterable]):
+        if type(args[0]) is dict:
+            return [self.fxn(**vals) for vals in args] 
+        else:
+            return [self.fxn(*vals) for vals in args] 
