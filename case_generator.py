@@ -1,10 +1,17 @@
 import itertools
-import random
-from random import randint
-from typing import Any, List, Tuple, Dict, Union, Callable, Iterable
-import numpy as np
+import inspect
+from typing import Any, List, Tuple
+
 
 class Param_Wrapper():
+    """Wraps an argument and it's restrictions. Also includes some useful methods for checking legality
+    of this arguments set and for converting between 1D and 2D idx representations.
+
+    Args:
+        value: value to wrap
+        restrictions: A list of restrictions for this arg in the from of Tuple[int, int, int].
+        First two ints represents x,y idx of restricted object and third int represents relationship, 1 included, 0 excluded.
+    """
 
     def __init__(self, value: Any, restrictions: List[Tuple[int, int, int]] = []) -> None:
         self.value = value
@@ -62,6 +69,21 @@ class Param_Wrapper():
         valid_exclude_set = len(exclude_set & p_set) == 0 #make sure we have no elements from exclude set
         return include_set.issubset(p_set) and valid_exclude_set
 
+class Key_Param_Wrapper(Param_Wrapper):
+    """Wraps a dictionary argument it's restrictions and its key. Also includes some useful methods for checking legality
+    of this arguments set and for converting between 1D and 2D idx representations. Inherits from Param_Wrapper.
+
+    Args:
+        value: value to wrap
+        restrictions: A list of restrictions for this arg in the from of Tuple[int, int, int].
+        First two ints represents x,y idx of restricted object and third int represents relationship, 1 included, 0 excluded.
+        key: key associated with this value.
+    """
+
+    def __init__(self, value: Any, restrictions: List[Tuple[int, int, int]] = [], key: str = None) -> None:
+        super().__init__(value, restrictions)
+        self.key = key
+
 def wrap_obj(obj: Any):
     """Wrapped passed object so it can be used in set generation"""
 
@@ -111,7 +133,7 @@ def prune_sets(param_vars: List[List[Param_Wrapper]], sets: List[set]):
     sets = [value for value in sets if value != None] #remove empty idxs
     return sets
 
-def set_generator(param_vars: List[List[Param_Wrapper]]):
+def set_generator(param_vars: List[List[Param_Wrapper]]) -> List[set]:
     counter = 0
     var_sets = [None] * len(param_vars)
     dims = () #tracks dimensions of inner lists
@@ -137,29 +159,35 @@ def generate_params(param_vars: List[List[Param_Wrapper]]) -> List[tuple]:
     for idx, set_vals in enumerate(pruned_sets):
         args = ()
         for val in set_vals:
-            args += (Param_Wrapper.convert_1d_idx_to_2d(val, param_vars),)
+            args += (Param_Wrapper.set_dim_converter(val, param_vars),)
         args_list[idx] = args
     return args_list
     
 
 class Fxn_Wrapper():
 
-    def __init__(self, fxn: callable, args: List[Dict[str, Param_Wrapper]]):
-        assert callable(fxn), "must pass a callable to Fxn_wrapper"
+    def __init__(self, fxn: callable, args: List[List[Key_Param_Wrapper]], keys: List[str] = None):
+        assert callable(fxn), "must pass a function to Fxn_wrapper"
         self.fxn = fxn 
         self.args = args
-    
-    def generate_args(self):
-        keys = []
-        for arg in self.args:
-            arg.keys()
-            
-            for key, val in enumerate(arg):
-                keys.append(key)
-
-
-    def eval_fxn_w_args(self, args: List[Iterable]):
-        if type(args[0]) is dict:
-            return [self.fxn(**vals) for vals in args] 
+        
+        #extract keys if not passed
+        if keys is None:
+            self.keys = inspect.getfullargspec(fxn).args
         else:
-            return [self.fxn(*vals) for vals in args] 
+            self.keys = keys
+
+        assert len(args) == len(keys), "Number of passed arguments must match number of keys"
+
+    def eval_args(self, all_args: List[Tuple[Key_Param_Wrapper]]) -> list:
+        fxn_eval_results = [None] * len(all_args)
+
+        for idx, fxn_args in enumerate(all_args):
+            pass_dict = {key: None for key in self.keys}
+            
+            for arg in fxn_args:
+                pass_dict[arg.key] = arg.value
+            
+            fxn_eval_results[idx] = self.fxn(**pass_dict)
+        return fxn_eval_results
+
