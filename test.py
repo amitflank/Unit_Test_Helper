@@ -1,8 +1,7 @@
-from code import interact
-from functools import total_ordering
 import pytest
-from typing import Tuple, Union, List
-from case_generator import Param_Wrapper, prune_sets, set_generator, wraps_param_vars, wrap_obj, generate_params
+from typing import Tuple, List
+from case_generator import prune_sets, set_generator, wraps_param_vars, wrap_obj, generate_params
+from case_generator import Param_Wrapper, Fxn_Wrapper, Key_Param_Wrapper
 from random import randint
 from math import prod
 import numpy as np
@@ -107,7 +106,9 @@ gen_param_data = [["hi", "bye", "dude"],
 ["no", "way", "jose"],
 ["good", "time", "guy"]]
 
-
+wrapped_vals = wraps_param_vars(gen_param_data)
+new_param_list = generate_params(wrapped_vals)
+print([(a.value,b.value, c.value) for a,b,c in new_param_list])
 
 @pytest.mark.parametrize("restrictions, param_setup, param_idx, exp_sets", [
     ([(0, 0, 1)], gen_param_data,(1,1), 21), #include 1 val 
@@ -135,5 +136,22 @@ def test_generate_params(restrictions: List[Tuple[int, int, int]], param_setup, 
                 else:
                     assert required_val not in param, "Found illegally restricted value {0} in param list".format(required_val)
 
-def test_eval_fxn_w_args():
-    pass
+class Test_Fxn_Wrapper():
+    @staticmethod
+    @pytest.fixture
+    def eval_setup() -> Tuple[Fxn_Wrapper, list]:
+        def test_fxn(val1: int, val2: int):
+            return val1 * val2
+
+        args = [[Key_Param_Wrapper(5, [(1, 0, 1)], "val1"), Key_Param_Wrapper(6, key = "val1")],
+                [Key_Param_Wrapper(7, key = "val2"), Key_Param_Wrapper(8, key = "val2")]]
+        f_wrap = Fxn_Wrapper(test_fxn, args, ["val1", "val2"])
+        expected_out = [35, 42, 48]
+        return f_wrap, expected_out
+
+    @staticmethod
+    def test_eval_args(eval_setup):
+        f_wrap, exp_out = eval_setup
+        args = generate_params(f_wrap.args)
+        results = f_wrap.eval_args(args)
+        assert results == exp_out, "Expected function results to be {0} but got {1}".format(exp_out, results)
