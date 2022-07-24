@@ -177,17 +177,33 @@ class Fxn_Wrapper():
         else:
             self.keys = keys
 
-        assert len(args) == len(keys), "Number of passed arguments must match number of keys"
+        assert len(self.args) == len(self.keys), "Number of passed arguments must match number of keys"
 
-    def eval_args(self, all_args: List[Tuple[Key_Param_Wrapper]]) -> list:
-        fxn_eval_results = [None] * len(all_args)
-
-        for idx, fxn_args in enumerate(all_args):
-            pass_dict = {key: None for key in self.keys}
+    def eval_args(self, args: List[Key_Param_Wrapper]) -> list:
+        pass_dict = {key: None for key in self.keys}
             
-            for arg in fxn_args:
-                pass_dict[arg.key] = arg.value
-            
-            fxn_eval_results[idx] = self.fxn(**pass_dict)
-        return fxn_eval_results
+        for arg in args:
+            pass_dict[arg.key] = arg.value
+        
+        return self.fxn(**pass_dict)
 
+
+    def evaluate_fxn(self) -> list:
+        new_args = generate_params(self.args)
+        results = []
+
+        for arg_vals in new_args:
+            arg_list = list(arg_vals)
+    
+            for idx, arg in enumerate(arg_vals):
+                if type(arg.value) is Fxn_Wrapper:
+                    unpacked_args = arg.value.evaluate_fxn()
+                    unpacked_args = [Key_Param_Wrapper(u_arg, key = arg.key) for u_arg in unpacked_args]
+                    arg_list[idx] = unpacked_args
+                   
+            for idx, val in enumerate(arg_list):
+                arg_list[idx] = [val] if type(val) is not (list) else val
+            
+            results += [self.eval_args(arg) for arg in itertools.product(*arg_list)]
+    
+        return results
