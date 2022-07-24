@@ -139,7 +139,7 @@ def test_generate_params(restrictions: List[Tuple[int, int, int]], param_setup, 
 class Test_Fxn_Wrapper():
     @staticmethod
     @pytest.fixture
-    def eval_setup() -> Tuple[Fxn_Wrapper, list]:
+    def eval_args_setup() -> Tuple[Fxn_Wrapper, list]:
         def test_fxn(val1: int, val2: int):
             return val1 * val2
 
@@ -148,10 +148,30 @@ class Test_Fxn_Wrapper():
         f_wrap = Fxn_Wrapper(test_fxn, args, ["val1", "val2"])
         expected_out = [35, 42, 48]
         return f_wrap, expected_out
-
+    
     @staticmethod
-    def test_eval_args(eval_setup):
-        f_wrap, exp_out = eval_setup
+    @pytest.fixture
+    def eval_fxn_setup(eval_args_setup) -> Tuple[Fxn_Wrapper, list]:
+        def add2_num(num1, num2):
+            return num1 + num2
+
+        inner_wrap, _ =  eval_args_setup
+        outer_args = [[Key_Param_Wrapper(4, key ="num1"), Key_Param_Wrapper(20, key ="num1")], 
+                        [Key_Param_Wrapper(4, key ="num2"), Key_Param_Wrapper(inner_wrap, key = "num2")]]
+        outer_wrap = Fxn_Wrapper(add2_num, outer_args)
+        expected_out = [8, 39, 46, 52, 24, 55, 62, 68]
+        return outer_wrap, expected_out
+        
+    """@staticmethod
+    def test_eval_args(eval_args_setup):
+        f_wrap, exp_out = eval_args_setup
         args = generate_params(f_wrap.args)
         results = f_wrap.eval_args(args)
-        assert results == exp_out, "Expected function results to be {0} but got {1}".format(exp_out, results)
+        assert results == exp_out, "Expected function results to be {0} but got {1}".format(exp_out, results)"""
+
+    @staticmethod
+    def test_evaluate_fxn(eval_fxn_setup):
+        f_wrap, exp_out = eval_fxn_setup
+
+        results = f_wrap.evaluate_fxn()
+        assert exp_out == results, "Expected function results to be {0} but got {1}".format(exp_out, results)
