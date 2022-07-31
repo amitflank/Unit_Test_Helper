@@ -19,7 +19,7 @@ class Param_Wrapper():
 
     @staticmethod
     def convert_1d_idx_to_2d(d1_val: str, D2_list: List[list]) -> Tuple[int, int]:
-        """takes 1D value and finds the 2D equivalent and returns that element in passed D2_list."""
+        """takes 1D mapped value and finds the 2D equivalent and returns idx of that element in passed D2_list."""
         int_d1 = int(d1_val)
         idx1 = 0
         sum_idx = 0
@@ -37,7 +37,8 @@ class Param_Wrapper():
         return idx1, idx2
     
     @staticmethod
-    def set_dim_converter(d1_val: str, D2_list: List[list]):
+    def set_dim_converter(d1_val: str, D2_list: List[list]) -> Any:
+        """Given mapped 1d idx value and 2D list return corresponding value in 2D list"""
         idx1, idx2 = Param_Wrapper.convert_1d_idx_to_2d(d1_val, D2_list)
         return D2_list[idx1][idx2]
 
@@ -104,7 +105,7 @@ def wrap_obj(obj: Any):
     return Param_Wrapper(obj)
     
 def wraps_param_vars(unwrapped_vars: List[List]) -> List[List[Param_Wrapper]]:
-    """wraps nested list of variables so they can be used in our set comparison operations"""
+    """wraps nested list of values in Param_Wrappers so they can be used in our set comparison operations"""
     wrapped_nested_list = [None] * len(unwrapped_vars)
     for i, param_list in enumerate(unwrapped_vars):
 
@@ -117,7 +118,8 @@ def wraps_param_vars(unwrapped_vars: List[List]) -> List[List[Param_Wrapper]]:
     return wrapped_nested_list
 
 def prune_sets(param_vars: List[List[Param_Wrapper]], sets: List[set]):
-    """Modifies passed sets by removing any set that contains a param whose restrictions are violated"""
+    """Modifies passed sets by removing any set that contains a param whose restrictions are violated.
+    Returns modified sets."""
     dims = tuple([len(inner_list) for inner_list in param_vars])
     for idx, n_set in enumerate(sets):
         
@@ -134,6 +136,13 @@ def prune_sets(param_vars: List[List[Param_Wrapper]], sets: List[set]):
     return sets
 
 def set_generator(param_vars: List[List[Param_Wrapper]]) -> List[set]:
+    """Takes nested list of Param_Wrapper and maps each element to unique value based on it's location in nested List. 
+    
+    Example if we had a Nested list with dimensions (3,2,3) the value assigned to parameter at idx (1,1) would be 4[3 * 1 + 1],
+    while idx (2,1) would be 6 [3*1 + 2*1 + 1].
+    
+    returns:
+        List of sets with mapped values"""
     counter = 0
     var_sets = [None] * len(param_vars)
     dims = () #tracks dimensions of inner lists
@@ -152,6 +161,15 @@ def set_generator(param_vars: List[List[Param_Wrapper]]) -> List[set]:
     return var_sets
 
 def generate_params(param_vars: List[List[Param_Wrapper]]) -> List[tuple]:
+    """Takes a nested list of Param_Wrapper where each inner list represent a potential argument at that inner lists idx. 
+
+    returns:
+        A List of tuple where each tuple represents a valid set of arguments which do not violate any Param_Wrapper restrictions.
+    
+    Example:
+        We pass param_vars whose Param_Wrapper values are [[1,2] [3,4]] with no restrictions.
+        Output would be [(1,3), (1,4), (2,3), (2,4)].
+    """
     sets = set_generator(param_vars)
     pruned_sets = prune_sets(param_vars, sets)
     args_list = [None] * len(pruned_sets)
@@ -196,13 +214,14 @@ class Fxn_Wrapper():
             arg_list = list(arg_vals)
     
             for idx, arg in enumerate(arg_vals):
+                #Recursively call ourselves and add all retrieved values as valid arguments at idx
                 if type(arg.value) is Fxn_Wrapper:
                     unpacked_args = arg.value.evaluate_fxn()
                     unpacked_args = [Key_Param_Wrapper(u_arg, key = arg.key) for u_arg in unpacked_args]
                     arg_list[idx] = unpacked_args
                    
             for idx, val in enumerate(arg_list):
-                arg_list[idx] = [val] if type(val) is not (list) else val
+                arg_list[idx] = [val] if type(val) is not (list) else val #turn non-list elements into lists
             
             results += [self.eval_args(arg) for arg in itertools.product(*arg_list)]
     
