@@ -180,9 +180,40 @@ def generate_params(param_vars: List[List[Param_Wrapper]]) -> List[tuple]:
             args += (Param_Wrapper.set_dim_converter(val, param_vars),)
         args_list[idx] = args
     return args_list
+
+def combination_w_restriction(combo_vals: List[Param_Wrapper], choices_per_arg):
+    num_elm = len(combo_vals)
+    my_map = {'{0}'.format(i): combo_vals[i] for i in range(num_elm)} #map 
+    val_str = ''
+
+    for idx, _ in enumerate(combo_vals):
+        val_str += str(idx)
+
+    string_rep = itertools.combinations(val_str, choices_per_arg)
+    args_list = []
     
+    for arg_rep in string_rep:
+        args = ()
+        for lookup in arg_rep:
+            args +=  (my_map[lookup], )
+        args_list.append(args)
+
+    return args_list
+
+
 
 class Fxn_Wrapper():
+    """Wraps a function and it possible arguments.
+    
+    Args:
+        fxn: A callable function
+        args: A nested list of potential arguments for fxn, where the outer list represents a specific key for the function
+        and the inner list represents each potential argument that can be passed to that key. By default we assume an argument 
+        will be passed for every key in fxn.
+        keys: Used if we only want to run variation on specific keys. 
+        
+    Raises: Assertion error if fxn is not Callable
+    Raises: Assertion error if passed number of keys does not match number of outer lists in args"""
 
     def __init__(self, fxn: callable, args: List[List[Key_Param_Wrapper]], keys: List[str] = None):
         assert callable(fxn), "must pass a function to Fxn_wrapper"
@@ -197,7 +228,11 @@ class Fxn_Wrapper():
 
         assert len(self.args) == len(self.keys), "Number of passed arguments must match number of keys"
 
-    def eval_args(self, args: List[Key_Param_Wrapper]) -> list:
+    def eval_args(self, args: List[Key_Param_Wrapper]):
+        """Takes list of Key_Param_Wrapper corresponding to key-val pairs for this instances fxn property.
+        
+        returns:
+            function output"""
         pass_dict = {key: None for key in self.keys}
             
         for arg in args:
@@ -207,6 +242,11 @@ class Fxn_Wrapper():
 
 
     def evaluate_fxn(self) -> list:
+        """Evaluates this instances fxn property with all legal combinations of arguments that it can take. If any argument is itself
+        a Fxn_Wrapper will recursively call itself and replace that argument with output of that Fxn_Wrapper. 
+        
+        returns:
+            List of values corresponding to function outputs"""
         new_args = generate_params(self.args)
         results = []
 
