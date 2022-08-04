@@ -1,4 +1,4 @@
-This Project was designed with pytest unit_testing in mind but can probably be adapted with some minimal effort.
+This Project was designed with pytest unit testing in mind but can probably be adapted with some minimal effort.
 
 This project seeks to make creating large numbers of different test conditions as painless as possible. We do this by allowing you
 to specify several potential values for a argument and it's relationships with other potential arguments you pass.
@@ -25,7 +25,7 @@ This is nice but lets say I have some restriction on the relationships of my wor
 I can do this by adding restrictions to **hi**. 
 
 `restricted_hi =  ("hi", [(1,1,0)])`<br />
-here the first two values represents the indexes at which the related value is located and the final value represents the relationship where 1 indicated the **must** be paired and 0 indicates they **cannot** be paired.
+here the first two values represents the indexes at which the related value is located and the final value represents the relationship where 1 indicates value **must** be paired and 0 indicates it **cannot** be paired.
 
 So lets replace **hi** with `restricted_hi`
 
