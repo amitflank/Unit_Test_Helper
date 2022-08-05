@@ -15,7 +15,7 @@ Here each outer list represents possible arguments for the given outer list inde
 
 First we need to wrap our values in a special `Param_Wrapper`. We can do this by using `wrapped_values = wraps_param_vars(gen_param_data)`
 
-We can now use this to generate are argument combinations.
+We can now use this to generate our argument combinations.
 `combos = generate_params(wrapped_values)`
 
 This will output a list of 27 tuples each of which contains a unique combination of each of our words sets that can be passed to a say pytest parameterization. 
