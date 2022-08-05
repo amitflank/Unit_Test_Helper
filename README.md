@@ -89,7 +89,7 @@ Lets make a second function:
 Let see what happens when we pass a Fxn_Wrapper as a argument to another function wrapper. 
 
 `inner_args = [[1, 2],[3, 4]]`<br/>
-`inner_fxn = Fxn_Wrapper(add_num, args, keys)`<br/>
+`inner_fxn = Fxn_Wrapper(add_num, args)`<br/>
 `outer_args = [[1,2], [3, inner_wrap]]`<br/>
 
 When a Fxn_Wrapper receives a Fxn_Wrapper as an argument, it replaces that Fxn_Wrapper with the output of its `evaluate_fxn` call. So this effectively reads:
