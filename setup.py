@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='Unit_Test_Helper',
-    version='0.1',
+    version='0.0.1',
     license='MIT',
     author="Amit Flank",
     packages=find_packages('src'),
