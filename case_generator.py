@@ -85,7 +85,7 @@ class Key_Param_Wrapper(Param_Wrapper):
         super().__init__(value, restrictions)
         self.key = key
 
-def wrap_obj(obj: Any):
+def wrap_obj(obj: Any, key: str = None) -> Param_Wrapper:
     """Wrapped passed object so it can be used in set generation"""
 
     #Check for valid restriction format
@@ -99,19 +99,25 @@ def wrap_obj(obj: Any):
                     valid_tuple = valid_tuple and (len(tupl) == 3) #valid restriction tuple is size 3
                 
                 if valid_tuple:
-                    return Param_Wrapper(obj[0], obj[1])
+
+                    if key is None:
+                        return Param_Wrapper(obj[0], obj[1])
+                    return Key_Param_Wrapper(obj[0], obj[1], key=key)
 
     #otherwise just wrap with no restriction
-    return Param_Wrapper(obj)
+    if key is None:
+        return Param_Wrapper(obj)
+    return Key_Param_Wrapper(obj, key=key)
     
-def wraps_param_vars(unwrapped_vars: List[List]) -> List[List[Param_Wrapper]]:
+def wraps_param_vars(unwrapped_vars: List[List], keys: List[str] = None) -> List[List[Param_Wrapper]]:
     """wraps nested list of values in Param_Wrappers so they can be used in our set comparison operations"""
     wrapped_nested_list = [None] * len(unwrapped_vars)
     for i, param_list in enumerate(unwrapped_vars):
-
+        key = None if keys is None else keys[i] #get key if it exists
         wrapped_list = [None] * len(param_list)
+
         for j, param in enumerate(param_list):
-            wrapped_list[j] = wrap_obj(param)
+            wrapped_list[j] = wrap_obj(param, key = key)
         
         wrapped_nested_list[i] = wrapped_list
     
@@ -215,10 +221,9 @@ class Fxn_Wrapper():
     Raises: Assertion error if fxn is not Callable
     Raises: Assertion error if passed number of keys does not match number of outer lists in args"""
 
-    def __init__(self, fxn: callable, args: List[List[Key_Param_Wrapper]], keys: List[str] = None):
+    def __init__(self, fxn: callable, args: List[list], keys: List[str] = None):
         assert callable(fxn), "must pass a function to Fxn_wrapper"
         self.fxn = fxn 
-        self.args = args
         
         #extract keys if not passed
         if keys is None:
@@ -226,6 +231,7 @@ class Fxn_Wrapper():
         else:
             self.keys = keys
 
+        self.args = wraps_param_vars(args, keys = self.keys)
         assert len(self.args) == len(self.keys), "Number of passed arguments must match number of keys"
 
     def eval_args(self, args: List[Key_Param_Wrapper]):
@@ -254,7 +260,7 @@ class Fxn_Wrapper():
             arg_list = list(arg_vals)
     
             for idx, arg in enumerate(arg_vals):
-                #Recursively call ourselves and add all retrieved values as valid arguments at idx
+                #Recursively call ourselves and add all retrieved values as valid arguments starting at current idx
                 if type(arg.value) is Fxn_Wrapper:
                     unpacked_args = arg.value.evaluate_fxn()
                     unpacked_args = [Key_Param_Wrapper(u_arg, key = arg.key) for u_arg in unpacked_args]
