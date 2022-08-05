@@ -4,7 +4,7 @@ This project seeks to make creating large numbers of different test conditions a
 to specify several potential values for a argument and it's relationships with other potential arguments you pass.
 
 ## Installation
-pip install Unit-Test-Helper==0.0.1
+>pip install Unit-Test-Helper==0.0.1
 
 ## Generating Arguments  
 Lets say I would like to create 27 combinations of 3 strings each which may contain 3 unique values. Lets look at how we would specify this.
