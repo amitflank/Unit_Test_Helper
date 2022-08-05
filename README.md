@@ -84,7 +84,7 @@ We can also nest functions inside other functions or as part of argument generat
 Lets make a second function:
 
 `def mul_num(num1, num2: int):`<br/>
-&emsp;`return val1 * val2`
+&emsp;`return num1 * num2`
 
 Let see what happens when we pass a Fxn_Wrapper as a argument to another function wrapper. 
 
