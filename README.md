@@ -47,6 +47,8 @@ Additionally we can have as many restrictions as we want. Lets say we wanted **"
 
 `restricted_hi =  ("hi", [(1,1,0), (2,0,1)])`<br/><br/>
 
+>**Note**: A output with a restricted argument must meet all its conditions, so **("hi", "way", "good")** still would not be included in the output of our last example. 
+
 ## Functions
 Lets make a simple function:
 
@@ -64,6 +66,30 @@ We can use the `evaluate_fxn` to get our output:<br/>
 `print(my_fxn_wrapper.evaluate_fxn())`
 >[6, 8, 7, 9]
 
+### **Functions with optional keys**
+Its often the case that we may have a function that have some optional parameters. Lets look how we would handle that using a Fxn_Wrapper. 
+
+`def scaled_add_num(val1, val2, scale_factor = 1):`<br/>
+&emsp;`return (val1 + val2) * scale_factor` 
+
+Suppose we don't wish to pass to pass anything to scale_factor. If we simply use the same code we get an Error.
+
+`my_args = [[1,2], [5,7]]` <br/>
+`my_fxn_wrapper = Fxn_Wrapper(scaled_add_num, my_args)`<br/>
+`print(my_fxn_wrapper.evaluate_fxn())`
+>AssertionError: Number of passed arguments must match number of keys.
+
+Luckily we can ask Fxn_Wrapper to only use specific keys. <br/>
+
+`used_keys = ["val1", "val2"]`<br/>
+`my_fxn_wrapper = Fxn_Wrapper(scaled_add_num, my_args, keys = used_keys)`
+
+Now we get the correct result:<br/>
+`print(my_fxn_wrapper.evaluate_fxn())`
+>[6, 8, 7, 9]
+
+>**Note**: Fxn_Wrapper will assign keys to args in the order passed to it. So in our example above **val1** receives [1,2] and **val2** gets [5,7].
+
 ### **Functions with restrictions** 
 
 We can also add restrictions to the function values we pass, just like we did with our initial argument generator. 
@@ -71,8 +97,7 @@ We can also add restrictions to the function values we pass, just like we did wi
 Lets make sure our **1** only gets added to **7** <br/>
 
 `restricted_1 = (1, [(1, 0, 1)])`<br/>
-`my_args = [[restricted_1, 2],`<br/>
-&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;`[5, 7]]` <br/>
+`my_args = [[restricted_1, 2], [5, 7]]` <br/>
 `my_fxn_wrapper = Fxn_Wrapper(add_num, my_args)`<br/>
 `print(my_fxn_wrapper.evaluate_fxn())`
 >[8, 7, 9]
@@ -83,7 +108,7 @@ We can also nest functions inside other functions or as part of argument generat
 
 Lets make a second function:
 
-`def mul_num(num1, num2: int):`<br/>
+`def mul_num(num1, num2):`<br/>
 &emsp;`return num1 * num2`
 
 Let see what happens when we pass a Fxn_Wrapper as a argument to another function wrapper. 
@@ -100,12 +125,4 @@ When a Fxn_Wrapper receives a Fxn_Wrapper as an argument, it replaces that Fxn_W
 `print(outer_wrap.evaluate_fxn())`
 >[3, 4, 5, 5, 6, 6, 8, 10, 10, 12]
 
-There is no restriction on how many functions you can nest, though the number of arguements you generate will increase very rapidly.
-
-
-
-
-
-
-
-    
+There is no restriction on how many functions you can nest, though the number of arguments you generate will increase very rapidly.
