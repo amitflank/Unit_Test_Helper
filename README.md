@@ -66,8 +66,8 @@ We can use the `evaluate_fxn` to get our output:<br/>
 `print(my_fxn_wrapper.evaluate_fxn())`
 >[6, 8, 7, 9]
 
-### **Functions with optional keys**
-Its often the case that we may have a function that have some optional parameters. Lets look how we would handle that using a Fxn_Wrapper. 
+### **Functions with optional parameters**
+Its often the case that we may have a function that has some optional parameters. Lets look how we would handle that using a Fxn_Wrapper. 
 
 `def scaled_add_num(val1, val2, scale_factor = 1):`<br/>
 &emsp;`return (val1 + val2) * scale_factor` 
