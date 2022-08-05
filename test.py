@@ -1,7 +1,7 @@
 import pytest
 from typing import Tuple, List
-from case_generator import prune_sets, set_generator, wraps_param_vars, wrap_obj, generate_params
-from case_generator import Param_Wrapper, Fxn_Wrapper, Key_Param_Wrapper
+from src.case_generator import prune_sets, set_generator, wraps_param_vars, wrap_obj, generate_params, combination_w_restriction
+from src.case_generator import Param_Wrapper, Fxn_Wrapper, Key_Param_Wrapper
 from random import randint
 from math import prod
 import numpy as np
@@ -108,7 +108,6 @@ gen_param_data = [["hi", "bye", "dude"],
 
 wrapped_vals = wraps_param_vars(gen_param_data)
 new_param_list = generate_params(wrapped_vals)
-print([(a.value,b.value, c.value) for a,b,c in new_param_list])
 
 @pytest.mark.parametrize("restrictions, param_setup, param_idx, exp_sets", [
     ([(0, 0, 1)], gen_param_data,(1,1), 21), #include 1 val 
@@ -143,9 +142,10 @@ class Test_Fxn_Wrapper():
         def test_fxn(val1: int, val2: int):
             return val1 * val2
 
-        args = [[Key_Param_Wrapper(5, [(1, 0, 1)], "val1"), Key_Param_Wrapper(6, key = "val1")],
-                [Key_Param_Wrapper(7, key = "val2"), Key_Param_Wrapper(8, key = "val2")]]
-        f_wrap = Fxn_Wrapper(test_fxn, args, ["val1", "val2"])
+        keys = ["val1", "val2"]
+        args = [[(5, [(1, 0, 1)]), 6],
+                [7, 8]]
+        f_wrap = Fxn_Wrapper(test_fxn, args, keys)
         expected_out = [35, 42, 48]
         return f_wrap, expected_out
     
@@ -156,8 +156,7 @@ class Test_Fxn_Wrapper():
             return num1 + num2
 
         inner_wrap, _ =  eval_args_setup
-        outer_args = [[Key_Param_Wrapper(4, key ="num1"), Key_Param_Wrapper(20, key ="num1")], 
-                        [Key_Param_Wrapper(4, key ="num2"), Key_Param_Wrapper(inner_wrap, key = "num2")]]
+        outer_args = [[4,20], [4, inner_wrap]]
         outer_wrap = Fxn_Wrapper(add2_num, outer_args)
         expected_out = [8, 39, 46, 52, 24, 55, 62, 68]
         return outer_wrap, expected_out
@@ -175,3 +174,11 @@ class Test_Fxn_Wrapper():
 
         results = f_wrap.evaluate_fxn()
         assert exp_out == results, "Expected function results to be {0} but got {1}".format(exp_out, results)
+
+test = [Param_Wrapper("hi"), Param_Wrapper("bye"), Param_Wrapper("dude")]
+test1 = combination_w_restriction(test, 2)
+
+for val in test1:
+    for arg in val:
+        print(arg.value)
+print(val.value for val in test1)
