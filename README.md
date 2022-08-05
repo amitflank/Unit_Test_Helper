@@ -3,9 +3,13 @@ This Project was designed with pytest unit testing in mind but can probably be a
 This project seeks to make creating large numbers of different test conditions as painless as possible. We do this by allowing you
 to specify several potential values for a argument and it's relationships with other potential arguments you pass.
 
-## Generating Arguments  
+## Installation
+pip install Unit-Test-Helper==0.0.1
 
+## Generating Arguments  
 Lets say I would like to create 27 combinations of 3 strings each which may contain 3 unique values. Lets look at how we would specify this.
+
+`from Unit_Test_Helper.case_generator import wraps_param_vars, generate_params`
 
 `gen_param_data = [["hi", "bye", "dude"],
 ["no", "way", "jose"],
@@ -18,7 +22,8 @@ First we need to wrap our values in a special `Param_Wrapper`. We can do this by
 We can now use this to generate our argument combinations.
 `combos = generate_params(wrapped_values)`
 
-This will output a list of 27 tuples each of which contains a unique combination of each of our words sets that can be passed to a say pytest parameterization. 
+This will output a list of 27 tuples each of which contains a unique combination of each of our words sets that can be passed to a say pytest parameterization.
+>[("hi", "no", "good"), ("hi", "no", "time"), ..., ("dude", "jose", "guy")] 
 
 ### **Adding restrictions to arguments**
 This is nice but lets say I have some restriction on the relationships of my word sets, say if I pass **"hi"** and **"way"** the function im testing will break or my tests take a long time and I don't care about any combination of those two values.
@@ -57,6 +62,7 @@ Lets make a simple function:
 
 Now lets say we want to pass it 4 potential values, 2 for each argument. We can do this the same way we did previously however we will now use `Fxn_Wrapper`.
 
+`from Unit_Test_Helper.case_generator import Fxn_Wrapper`<br/>
 `my_args = [[1,2], [5,7]]` <br/>
 `my_fxn_wrapper = Fxn_Wrapper(add_num, my_args)`
 
