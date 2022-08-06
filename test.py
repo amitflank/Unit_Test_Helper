@@ -107,7 +107,7 @@ gen_param_data = [["hi", "bye", "dude"],
 ["good", "time", "guy"]]
 
 wrapped_vals = wraps_param_vars(gen_param_data)
-new_param_list = generate_params(wrapped_vals)
+new_param_list = generate_params(wrapped_vals, unwrap=False)
 
 @pytest.mark.parametrize("restrictions, param_setup, param_idx, exp_sets", [
     ([(0, 0, 1)], gen_param_data,(1,1), 21), #include 1 val 
@@ -121,7 +121,7 @@ def test_generate_params(restrictions: List[Tuple[int, int, int]], param_setup, 
     x_idx, y_idx = param_idx
     wrapped_obj = D2_list[x_idx][y_idx]
     wrapped_obj.restrictions = restrictions
-    new_param_list = generate_params(D2_list)
+    new_param_list = generate_params(D2_list, unwrap=False)
     
     assert len(new_param_list) == exp_sets, "Expected {0} sets but found {1} sets".format(exp_sets, len(new_param_list))
 
@@ -175,10 +175,3 @@ class Test_Fxn_Wrapper():
         results = f_wrap.evaluate_fxn()
         assert exp_out == results, "Expected function results to be {0} but got {1}".format(exp_out, results)
 
-test = [Param_Wrapper("hi"), Param_Wrapper("bye"), Param_Wrapper("dude")]
-test1 = combination_w_restriction(test, 2)
-
-for val in test1:
-    for arg in val:
-        print(arg.value)
-print(val.value for val in test1)
