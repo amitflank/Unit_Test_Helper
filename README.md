@@ -23,7 +23,12 @@ We can now use this to generate our argument combinations.
 `combos = generate_params(wrapped_values)`
 
 This will output a list of 27 tuples each of which contains a unique combination of each of our words sets that can be passed to a say pytest parameterization.
+
+`print(combos)`
 >[("hi", "no", "good"), ("hi", "no", "time"), ..., ("dude", "jose", "guy")] 
+
+>**Note**: The Default behavior of generate_params is to return the values you wrapped, however if you would like your values to remain wrapped you can like this: <br/>
+`combos = generate_params(wrapped_values, unwrap = False)`
 
 ### **Adding restrictions to arguments**
 This is nice but lets say I have some restriction on the relationships of my word sets, say if I pass **"hi"** and **"way"** the function im testing will break or my tests take a long time and I don't care about any combination of those two values.
@@ -35,9 +40,8 @@ here the first two values represents the indexes at which the related value is l
 
 So lets replace **"hi"** with `restricted_hi`
 
-`gen_param_data = [[restricted_hi, "bye", "dude"],
-["no", "way", "jose"],
-["good", "time", "guy"]]`
+`gen_param_data = [[restricted_hi, "bye", "dude"], ["no", "way", "jose"], ["good", "time", "guy"]]`<br/>
+`wrapped_values = wraps_param_vars(gen_param_data)`
 
 Now if we run: `combos = generate_params(wrapped_values)`
 
@@ -82,7 +86,6 @@ Suppose we don't wish to pass to pass anything to scale_factor. If we simply use
 
 `my_args = [[1,2], [5,7]]` <br/>
 `my_fxn_wrapper = Fxn_Wrapper(scaled_add_num, my_args)`<br/>
-`print(my_fxn_wrapper.evaluate_fxn())`
 >AssertionError: Number of passed arguments must match number of keys.
 
 Luckily we can ask Fxn_Wrapper to only use specific keys. <br/>
@@ -102,7 +105,7 @@ We can also add restrictions to the function values we pass, just like we did wi
 
 Lets make sure our **1** only gets added to **7** <br/>
 
-`restricted_1 = (1, [(1, 0, 1)])`<br/>
+`restricted_1 = (1, [(1, 1, 1)])`<br/>
 `my_args = [[restricted_1, 2], [5, 7]]` <br/>
 `my_fxn_wrapper = Fxn_Wrapper(add_num, my_args)`<br/>
 `print(my_fxn_wrapper.evaluate_fxn())`
@@ -128,7 +131,7 @@ When a Fxn_Wrapper receives a Fxn_Wrapper as an argument, it replaces that Fxn_W
 >outer_args = [[1,2], [3, 4, 5, 5, 6]]
 
 `outer_fxn = Fxn_Wrapper(mul_num, outer_args)`<br/>
-`print(outer_wrap.evaluate_fxn())`
+`print(outer_fxn.evaluate_fxn())`
 >[3, 4, 5, 5, 6, 6, 8, 10, 10, 12]
 
 There is no restriction on how many functions you can nest, though the number of arguments you generate will increase very rapidly.
