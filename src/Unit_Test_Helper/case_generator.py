@@ -17,6 +17,12 @@ class Param_Wrapper():
         self.value = value
         self.restrictions = restrictions #list_idx, set_idx, restriction_type(1 included, 0 excluded)
 
+    def __repr__(self):
+        return self.value
+        
+    def __str__(self):
+        return self.value
+
     @staticmethod
     def convert_1d_idx_to_2d(d1_val: str, D2_list: List[list]) -> Tuple[int, int]:
         """takes 1D mapped value and finds the 2D equivalent and returns idx of that element in passed D2_list."""
@@ -166,7 +172,7 @@ def set_generator(param_vars: List[List[Param_Wrapper]]) -> List[set]:
     var_sets = [set(val)  for val in itertools.product(*var_sets)] #get iterable product of all our combinations
     return var_sets
 
-def generate_params(param_vars: List[List[Param_Wrapper]]) -> List[tuple]:
+def generate_params(param_vars: List[List[Param_Wrapper]], unwrap = True) -> List[tuple]:
     """Takes a nested list of Param_Wrapper where each inner list represent a potential argument at that inner lists idx. 
 
     returns:
@@ -181,10 +187,17 @@ def generate_params(param_vars: List[List[Param_Wrapper]]) -> List[tuple]:
     args_list = [None] * len(pruned_sets)
 
     for idx, set_vals in enumerate(pruned_sets):
-        args = ()
+        args = [None] * len(set_vals)
+        
         for val in set_vals:
-            args += (Param_Wrapper.set_dim_converter(val, param_vars),)
-        args_list[idx] = args
+            arg_idx, _ = Param_Wrapper.convert_1d_idx_to_2d(val, param_vars)
+            
+            if unwrap:
+                args[arg_idx] = Param_Wrapper.set_dim_converter(val, param_vars).value
+            else:
+                args[arg_idx] = Param_Wrapper.set_dim_converter(val, param_vars)
+        args_list[idx] = tuple(args)
+    
     return args_list
 
 def combination_w_restriction(combo_vals: List[Param_Wrapper], choices_per_arg):
@@ -253,7 +266,7 @@ class Fxn_Wrapper():
         
         returns:
             List of values corresponding to function outputs"""
-        new_args = generate_params(self.args)
+        new_args = generate_params(self.args, unwrap=False)
         results = []
 
         for arg_vals in new_args:
